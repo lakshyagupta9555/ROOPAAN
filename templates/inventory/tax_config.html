@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Tax Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <h1 class="text-2xl font-bold text-white mb-6">Tax Configuration</h1>
+        <p class="text-gray-400 mb-6">Configure CGST and SGST rates that will be applied to all sales</p>
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">CGST Rate (%) *</label>
+                {{ form.cgst_rate }}
+                <p class="text-xs text-gray-400 mt-1">Central Goods and Services Tax</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">SGST Rate (%) *</label>
+                {{ form.sgst_rate }}
+                <p class="text-xs text-gray-400 mt-1">State Goods and Services Tax</p>
+            </div>
+            
+            <div class="bg-gray-700 rounded-lg p-4">
+                <p class="text-gray-300">
+                    <span class="font-medium">Total GST:</span> 
+                    <span id="total-gst" class="text-green-400 font-bold">18.00%</span>
+                </p>
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg">
+                    Save Configuration
+                </button>
+                <a href="{% url 'inventory:dashboard' %}" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg">
+                    Back to Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateTotalGST() {
+    const cgst = parseFloat(document.querySelector('input[name="cgst_rate"]').value) || 0;
+    const sgst = parseFloat(document.querySelector('input[name="sgst_rate"]').value) || 0;
+    document.getElementById('total-gst').textContent = (cgst + sgst).toFixed(2) + '%';
+}
+
+document.querySelectorAll('input[name="cgst_rate"], input[name="sgst_rate"]').forEach(input => {
+    input.addEventListener('input', updateTotalGST);
+});
+
+updateTotalGST();
+</script>
+{% endblock %}

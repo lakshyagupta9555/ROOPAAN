@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ sale.invoice_number }}</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .invoice-details {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .totals {
+            margin-top: 20px;
+            float: right;
+            width: 300px;
+        }
+        .totals table {
+            margin: 0;
+        }
+        .grand-total {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .print-btn {
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.print()" class="print-btn no-print">🖨️ Print Invoice</button>
+    
+    <div class="invoice-header">
+        <h1>INVOICE</h1>
+        <h2>ROOPAAN STORE</h2>
+    </div>
+    
+    <div class="invoice-details">
+        <p><strong>Invoice Number:</strong> {{ sale.invoice_number }}</p>
+        <p><strong>Date:</strong> {{ sale.created_at|date:"d M, Y h:i A" }}</p>
+        {% comment %} <p><strong>Sold By:</strong> {{ sale.seller.user.username }}</p> {% endcomment %}
+        <p><strong>Payment Method:</strong> {{ sale.get_payment_method_display }}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.items.all %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ item.price }}</td>
+                <td>₹{{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td>₹{{ sale.subtotal }}</td>
+            </tr>
+            {% if sale.discount_amount > 0 %}
+            <tr>
+                <td>Discount {% if sale.coupon %}({{ sale.coupon.code }}){% endif %}:</td>
+                <td style="color: green;">-₹{{ sale.discount_amount }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td>CGST ({{ sale.cgst_rate }}%):</td>
+                <td>₹{{ sale.tax_amount|floatformat:2|cut:"." |floatformat:2|slice:":2" }}</td>
+            </tr>
+            <tr>
+                <td>SGST ({{ sale.sgst_rate }}%):</td>
+                <td>₹{{ sale.tax_amount|floatformat:2|cut:"." |floatformat:2|slice:":2" }}</td>
+            </tr>
+            <tr class="grand-total">
+                <td>TOTAL:</td>
+                <td>₹{{ sale.total_amount }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div style="clear: both; margin-top: 50px; text-align: center; font-size: 12px; color: #666;">
+        <p>Thank you for your business!</p>
+        <p>!! Visit Again !!</p>
+    </div>
+</body>
+</html>

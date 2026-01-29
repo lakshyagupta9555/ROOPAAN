@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <h1 class="text-2xl font-bold text-white mb-6">Edit Product: {{ product.name }}</h1>
+        
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Product Name *</label>
+                    {{ form.name }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Barcode *</label>
+                    {{ form.barcode }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Quantity *</label>
+                    {{ form.quantity }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Selling Price (₹) *</label>
+                    {{ form.selling_price }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Cost Price (₹) *</label>
+                    {{ form.cost_price }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Import Duty (₹)</label>
+                    {{ form.import_duty }}
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                {{ form.description }}
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
+                {{ form.image }}
+                {% if product.image %}
+                <div class="mt-2">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="h-32 rounded-lg">
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg">
+                    Update Product
+                </button>
+                <a href="{% url 'inventory:product_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

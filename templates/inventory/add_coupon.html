@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Coupon{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <h1 class="text-2xl font-bold text-white mb-6">Create New Coupon</h1>
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Coupon Code *</label>
+                    {{ form.code }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Discount Type *</label>
+                    {{ form.discount_type }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Discount Value *</label>
+                    {{ form.discount_value }}
+                    <p class="text-xs text-gray-400 mt-1">Enter percentage or fixed amount</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Min Purchase Amount (₹)</label>
+                    {{ form.min_purchase_amount }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Max Discount Amount (₹)</label>
+                    {{ form.max_discount_amount }}
+                    <p class="text-xs text-gray-400 mt-1">Optional - for percentage discounts</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Usage Limit</label>
+                    {{ form.usage_limit }}
+                    <p class="text-xs text-gray-400 mt-1">Leave empty for unlimited</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Valid From *</label>
+                    {{ form.valid_from }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Valid Until *</label>
+                    {{ form.valid_until }}
+                </div>
+            </div>
+            
+            <div class="flex items-center">
+                <label class="flex items-center cursor-pointer">
+                    {{ form.is_active }}
+                    <span class="ml-2 text-gray-300">Active</span>
+                </label>
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg">
+                    Create Coupon
+                </button>
+                <a href="{% url 'inventory:coupon_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
