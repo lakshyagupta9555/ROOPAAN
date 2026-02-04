@@ -12,6 +12,42 @@ from barcode.writer import ImageWriter
 from django.core.files import File
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
+import hashlib
+import re
+
+
+def generate_product_barcode(product):
+    """Generate unique numeric barcode for scanner compatibility"""
+    import random
+    import hashlib
+    
+    # Create a seed from product attributes
+    seed_string = f"{product.name}{product.size or ''}{product.colour or ''}"
+    
+    # Generate a hash and convert to numeric
+    hash_object = hashlib.md5(seed_string.encode())
+    hash_hex = hash_object.hexdigest()
+    
+    # Convert first 8 hex characters to numeric (base-10)
+    numeric_hash = int(hash_hex[:8], 16)
+    
+    # Get last 8 digits to create barcode
+    base_barcode = str(numeric_hash)[-8:]
+    
+    # Ensure it starts with a non-zero digit for EAN compatibility
+    if base_barcode[0] == '0':
+        base_barcode = '1' + base_barcode[1:]
+    
+    barcode = base_barcode
+    
+    # Ensure uniqueness by adding sequence number if needed
+    counter = 0
+    while Product.objects.filter(barcode=barcode).exists():
+        counter += 1
+        # Modify last 4 digits with counter
+        barcode = base_barcode[:-4] + str(counter).zfill(4)
+    
+    return barcode
 
 
 def is_inventory_manager(user):
@@ -106,6 +142,11 @@ def add_product(request):
         if form.is_valid():
             product = form.save(commit=False)
             product.created_by = request.user
+            
+            # Auto-generate barcode if not provided
+            if not product.barcode:
+                product.barcode = generate_product_barcode(product)
+            
             product.save()
             messages.success(request, 'Product added successfully!')
             return redirect('inventory:product_list')

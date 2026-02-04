@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}Login - Inventory System{% endblock %}
+{% block title %}Login - ROOPAAN{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
         <div>
             <h2 class="mt-6 text-center text-3xl font-extrabold text-white">
-                📦 Inventory Management System
+                📦 ROOPAAN
             </h2>
             <p class="mt-2 text-center text-sm text-gray-400">
-                Sign in to your account
+                Sign in to your ROOPAAN account
             </p>
         </div>
         <form class="mt-8 space-y-6" method="POST">
@@ -29,12 +29,21 @@
                            placeholder="Enter your password">
                 </div>
                 <div class="mb-4">
-                    <label for="user_type" class="block text-sm font-medium text-gray-300 mb-2">Login As</label>
-                    <select id="user_type" name="user_type" required 
-                            class="appearance-none rounded-lg relative block w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm">
-                        <option value="inventory">Inventory Manager</option>
-                        <option value="seller">Seller</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-300 mb-3">Login As</label>
+                    <div class="flex gap-4">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="user_type" value="inventory" required class="hidden peer">
+                            <div class="px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-white hover:bg-gray-600 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all">
+                                <div class="font-medium">📦 Inventory Manager</div>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="user_type" value="seller" required class="hidden peer">
+                            <div class="px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-white hover:bg-gray-600 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all">
+                                <div class="font-medium">💼 Seller</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 

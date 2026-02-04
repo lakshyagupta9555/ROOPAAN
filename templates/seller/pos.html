@@ -182,11 +182,28 @@ let currentCheckoutData = null;
 // Focus on barcode input
 document.getElementById('barcode-input').focus();
 
-// Handle Enter key on barcode input
+// Handle Enter key on barcode input - Auto add to cart on exact barcode match
 document.getElementById('barcode-input').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
+        e.preventDefault();
         searchProduct();
     }
+});
+
+// Auto-detect barcode scanner input (rapid input followed by enter)
+let barcodeBuffer = '';
+let barcodeTimeout = null;
+
+document.getElementById('barcode-input').addEventListener('input', function(e) {
+    clearTimeout(barcodeTimeout);
+    
+    // If input is rapid (typical of barcode scanner), auto-submit after short delay
+    barcodeTimeout = setTimeout(() => {
+        const value = e.target.value.trim();
+        if (value.length >= 6) { // Minimum barcode length
+            searchProduct();
+        }
+    }, 100);
 });
 
 async function searchProduct() {
@@ -202,18 +219,52 @@ async function searchProduct() {
         console.log('Search response:', data);
 
         if (data.product) {
+            // Auto-add to cart when exact barcode match is found
             addToCart(data.product);
             document.getElementById('barcode-input').value = '';
             document.getElementById('search-results').innerHTML = '';
+            
+            // Show success feedback
+            showScanSuccess(data.product.name);
         } else if (data.products && data.products.length > 0) {
             displaySearchResults(data.products);
         } else {
-            alert('Product not found!');
+            showScanError('Product not found!');
         }
     } catch (error) {
         console.error('Search error:', error);
-        alert('Error searching for product: ' + error.message);
+        showScanError('Error searching for product: ' + error.message);
     }
+}
+
+function showScanSuccess(productName) {
+    const input = document.getElementById('barcode-input');
+    input.classList.add('border-green-500', 'bg-green-900/20');
+    
+    setTimeout(() => {
+        input.classList.remove('border-green-500', 'bg-green-900/20');
+    }, 500);
+    
+    // Optional: Show toast notification
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    toast.innerHTML = `✅ Added: ${productName}`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 2000);
+}
+
+function showScanError(message) {
+    const input = document.getElementById('barcode-input');
+    input.classList.add('border-red-500', 'bg-red-900/20');
+    
+    setTimeout(() => {
+        input.classList.remove('border-red-500', 'bg-red-900/20');
+    }, 500);
+    
+    alert(message);
 }
 
 function displaySearchResults(products) {

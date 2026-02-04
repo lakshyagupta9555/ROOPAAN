@@ -17,8 +17,19 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Barcode *</label>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Barcode (Auto-generated)</label>
                     {{ form.barcode }}
+                    <p class="text-gray-400 text-xs mt-1">Generated from: {{ product.name }}{% if product.size %} - {{ product.size }}{% endif %}{% if product.colour %} - {{ product.colour }}{% endif %}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Size</label>
+                    {{ form.size }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Colour</label>
+                    {{ form.colour }}
                 </div>
                 
                 <div>

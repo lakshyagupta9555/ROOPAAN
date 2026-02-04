@@ -49,7 +49,9 @@ class TaxConfig(models.Model):
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    barcode = models.CharField(max_length=100, unique=True)
+    size = models.CharField(max_length=50, blank=True, null=True)
+    colour = models.CharField(max_length=50, blank=True, null=True)
+    barcode = models.CharField(max_length=100, unique=True, blank=True)
     quantity = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     selling_price = models.DecimalField(
         max_digits=10, 

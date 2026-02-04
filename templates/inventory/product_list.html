@@ -40,6 +40,13 @@
                 <tr class="hover:bg-gray-700">
                     <td class="px-6 py-4">
                         <div class="text-white font-medium">{{ product.name }}</div>
+                        {% if product.size or product.colour %}
+                        <div class="text-gray-400 text-sm">
+                            {% if product.size %}Size: {{ product.size }}{% endif %}
+                            {% if product.size and product.colour %} | {% endif %}
+                            {% if product.colour %}Colour: {{ product.colour }}{% endif %}
+                        </div>
+                        {% endif %}
                         <div class="text-gray-400 text-sm">Cost: ₹{{ product.cost_price }}</div>
                     </td>
                     <td class="px-6 py-4 text-gray-300">{{ product.barcode }}</td>

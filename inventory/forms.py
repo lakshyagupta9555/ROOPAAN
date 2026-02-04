@@ -4,12 +4,21 @@ from django.contrib.auth.password_validation import validate_password
 
 
 class ProductForm(forms.ModelForm):
+    barcode = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 
+            'placeholder': 'Leave empty for auto-generation or enter custom barcode'
+        })
+    )
+    
     class Meta:
         model = Product
-        fields = ['name', 'barcode', 'quantity', 'selling_price', 'cost_price', 'import_duty', 'description', 'image']
+        fields = ['name', 'size', 'colour', 'barcode', 'quantity', 'selling_price', 'cost_price', 'import_duty', 'description', 'image']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
-            'barcode': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
+            'size': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'placeholder': 'e.g., S, M, L, XL, 32, 40'}),
+            'colour': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'placeholder': 'e.g., Red, Blue, Black'}),
             'quantity': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
             'selling_price': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'step': '0.01'}),
             'cost_price': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'step': '0.01'}),

@@ -83,10 +83,14 @@ class SaleItem(models.Model):
     
     @property
     def subtotal(self):
+        if self.price is None or self.quantity is None:
+            return Decimal('0.00')
         return self.price * self.quantity
     
     @property
     def tax_amount(self):
+        if not hasattr(self, 'sale') or self.sale is None:
+            return Decimal('0.00')
         tax_rate = (self.sale.cgst_rate + self.sale.sgst_rate) / 100
         return self.subtotal * tax_rate
     

@@ -96,15 +96,51 @@ def pos_system(request):
 def search_product(request):
     query = request.GET.get('q', '')
     
+    # Log the incoming query for debugging
+    print(f"DEBUG: Received search query: '{query}' (length: {len(query)})")
+    
     if not query:
         return JsonResponse({'products': []})
     
-    products = Product.objects.filter(barcode=query).first()
+    # Clean the query - remove whitespace and common scanner artifacts
+    query_clean = query.strip()
+    print(f"DEBUG: Cleaned query: '{query_clean}'")
+    
+    # Try exact match first
+    products = Product.objects.filter(barcode=query_clean).first()
     
     if products:
+        print(f"DEBUG: Found product by exact match: {products.name} - {products.barcode}")
+        product_name = products.name
+        if products.size:
+            product_name += f" ({products.size})"
+        if products.colour:
+            product_name += f" - {products.colour}"
+        
         data = {
             'id': str(products.id),
-            'name': products.name,
+            'name': product_name,
+            'barcode': products.barcode,
+            'price': float(products.selling_price),
+            'quantity': products.quantity,
+        }
+        return JsonResponse({'product': data})
+    
+    # Try partial match (contains)
+    print(f"DEBUG: Trying partial match for: '{query_clean}'")
+    products = Product.objects.filter(barcode__icontains=query_clean).first()
+    
+    if products:
+        print(f"DEBUG: Found product by partial match: {products.name} - {products.barcode}")
+        product_name = products.name
+        if products.size:
+            product_name += f" ({products.size})"
+        if products.colour:
+            product_name += f" - {products.colour}"
+        
+        data = {
+            'id': str(products.id),
+            'name': product_name,
             'barcode': products.barcode,
             'price': float(products.selling_price),
             'quantity': products.quantity,
@@ -112,15 +148,32 @@ def search_product(request):
         return JsonResponse({'product': data})
     
     # If not found by barcode, search by name
-    products_list = Product.objects.filter(name__icontains=query, quantity__gt=0)[:10]
+    print(f"DEBUG: Searching by name: '{query_clean}'")
+    products_list = Product.objects.filter(name__icontains=query_clean, quantity__gt=0)[:10]
     
-    data = [{
-        'id': str(p.id),
-        'name': p.name,
-        'barcode': p.barcode,
-        'price': float(p.selling_price),
-        'quantity': p.quantity,
-    } for p in products_list]
+    print(f"DEBUG: Found {len(products_list)} products by name search")
+    
+    data = []
+    for p in products_list:
+        product_name = p.name
+        if p.size:
+            product_name += f" ({p.size})"
+        if p.colour:
+            product_name += f" - {p.colour}"
+        
+        data.append({
+            'id': str(p.id),
+            'name': product_name,
+            'barcode': p.barcode,
+            'price': float(p.selling_price),
+            'quantity': p.quantity,
+        })
+    
+    if not data:
+        print(f"DEBUG: No products found for query: '{query_clean}'")
+        # List all barcodes in system for debugging
+        all_barcodes = Product.objects.values_list('barcode', flat=True)[:10]
+        print(f"DEBUG: Available barcodes in system: {list(all_barcodes)}")
     
     return JsonResponse({'products': data})
 

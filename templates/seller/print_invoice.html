@@ -15,10 +15,23 @@
             padding: 20px;
         }
         .invoice-header {
-            text-align: center;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
             margin-bottom: 30px;
             border-bottom: 2px solid #333;
             padding-bottom: 20px;
+        }
+        .logo {
+            width: 250px;
+            height: auto;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .header-text {
+            flex: 1;
+            text-align: left;
         }
         .invoice-details {
             margin-bottom: 20px;
@@ -63,8 +76,13 @@
     <button onclick="window.print()" class="print-btn no-print">🖨️ Print Invoice</button>
     
     <div class="invoice-header">
-        <h1>INVOICE</h1>
-        <h2>ROOPAAN STORE</h2>
+        <div class="header-text">
+            <h1>INVOICE</h1>
+            <h2>ROOPAAN STORE</h2>
+            <p style="margin: 3px 0; font-size: 13px; color: #555;">178 C Rajeev Nagar, Yashoda Nagar, Kanpur</p>
+            <p style="margin: 3px 0; font-size: 13px; color: #555;">Phone: 9555631256 | Email: roopan@store@gmail.com</p>
+        </div>
+        <img src="/media/invoice/llogo.png" alt="Store Logo" class="logo">
     </div>
     
     <div class="invoice-details">
@@ -86,7 +104,7 @@
         <tbody>
             {% for item in sale.items.all %}
             <tr>
-                <td>{{ item.product_name }}</td>
+                <td>{{ item.product_name }}{% if item.product.size %} - {{ item.product.size }}{% endif %}</td>
                 <td>{{ item.quantity }}</td>
                 <td>₹{{ item.price }}</td>
                 <td>₹{{ item.subtotal }}</td>
@@ -109,11 +127,11 @@
             {% endif %}
             <tr>
                 <td>CGST ({{ sale.cgst_rate }}%):</td>
-                <td>₹{{ sale.tax_amount|floatformat:2|cut:"." |floatformat:2|slice:":2" }}</td>
+                <td>₹{% widthratio sale.tax_amount 2 1 %}</td>
             </tr>
             <tr>
                 <td>SGST ({{ sale.sgst_rate }}%):</td>
-                <td>₹{{ sale.tax_amount|floatformat:2|cut:"." |floatformat:2|slice:":2" }}</td>
+                <td>₹{% widthratio sale.tax_amount 2 1 %}</td>
             </tr>
             <tr class="grand-total">
                 <td>TOTAL:</td>
@@ -123,7 +141,7 @@
     </div>
     
     <div style="clear: both; margin-top: 50px; text-align: center; font-size: 12px; color: #666;">
-        <p>Thank you for your business!</p>
+        <p>Thank you for Visiting!</p>
         <p>!! Visit Again !!</p>
     </div>
 </body>

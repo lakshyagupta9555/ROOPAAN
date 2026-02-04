@@ -9,9 +9,25 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'barcode', 'quantity', 'selling_price', 'cost_price']
-    list_filter = ['created_at']
-    search_fields = ['name', 'barcode']
+    list_display = ['name', 'size', 'colour', 'barcode', 'quantity', 'selling_price', 'cost_price', 'is_in_stock']
+    list_filter = ['created_at', 'size', 'colour']
+    search_fields = ['name', 'barcode', 'size', 'colour']
+    readonly_fields = ['barcode', 'created_at', 'updated_at', 'created_by']
+    fieldsets = (
+        ('Product Information', {
+            'fields': ('name', 'size', 'colour', 'barcode', 'description', 'image')
+        }),
+        ('Inventory', {
+            'fields': ('quantity',)
+        }),
+        ('Pricing', {
+            'fields': ('selling_price', 'cost_price', 'import_duty')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at', 'created_by'),
+            'classes': ('collapse',)
+        }),
+    )
 
 @admin.register(TaxConfig)
 class TaxConfigAdmin(admin.ModelAdmin):
