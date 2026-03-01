@@ -49,6 +49,7 @@ class TaxConfig(models.Model):
 class Product(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
+    brand = models.CharField(max_length=100, blank=True, null=True, default="ROOPAAN'S")
     size = models.CharField(max_length=50, blank=True, null=True)
     colour = models.CharField(max_length=50, blank=True, null=True)
     barcode = models.CharField(max_length=100, unique=True, blank=True)
@@ -77,6 +78,15 @@ class Product(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        # Set default brand if not provided
+        if not self.brand:
+            self.brand = "ROOPAAN'S"
+        # Clean and normalize barcode before saving
+        if self.barcode:
+            self.barcode = str(self.barcode).strip()
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.name} (₹{self.selling_price})"

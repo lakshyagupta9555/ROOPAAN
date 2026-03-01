@@ -14,9 +14,10 @@ class ProductForm(forms.ModelForm):
     
     class Meta:
         model = Product
-        fields = ['name', 'size', 'colour', 'barcode', 'quantity', 'selling_price', 'cost_price', 'import_duty', 'description', 'image']
+        fields = ['name', 'brand', 'size', 'colour', 'barcode', 'quantity', 'selling_price', 'cost_price', 'import_duty', 'description', 'image']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
+            'brand': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'placeholder': "Leave empty for ROOPAAN'S"}),
             'size': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'placeholder': 'e.g., S, M, L, XL, 32, 40'}),
             'colour': forms.TextInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'placeholder': 'e.g., Red, Blue, Black'}),
             'quantity': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),

@@ -98,41 +98,50 @@ def search_product(request):
     
     # Log the incoming query for debugging
     print(f"DEBUG: Received search query: '{query}' (length: {len(query)})")
+    print(f"DEBUG: Query ASCII codes: {[ord(c) for c in query]}")
     
     if not query:
         return JsonResponse({'products': []})
     
-    # Clean the query - remove whitespace and common scanner artifacts
-    query_clean = query.strip()
-    print(f"DEBUG: Cleaned query: '{query_clean}'")
+    # Clean the query - remove all whitespace, tabs, newlines and common scanner artifacts
+    query_clean = query.strip()  # For name searching
+    query_aggressive = ''.join(query.split()).strip()  # Remove all whitespace
     
-    # Try exact match first
-    products = Product.objects.filter(barcode=query_clean).first()
+    # Extract only numeric digits (many scanners work best with numeric-only searches)
+    query_numeric = ''.join(c for c in query_aggressive if c.isdigit())
+    
+    print(f"DEBUG: Original: '{query}'")
+    print(f"DEBUG: Clean: '{query_clean}'")
+    print(f"DEBUG: Aggressive: '{query_aggressive}'")
+    print(f"DEBUG: Numeric only: '{query_numeric}'")
+    
+    # Try multiple search strategies
+    search_values = [query_clean, query_aggressive]
+    if query_numeric and query_numeric != query_aggressive:
+        search_values.append(query_numeric)
+    
+    products = None
+    matched_by = None
+    
+    # Try exact matches with different cleaned versions
+    for search_val in search_values:
+        if products:
+            break
+        products = Product.objects.filter(barcode=search_val).first()
+        if products:
+            matched_by = f"exact match with '{search_val}'"
+            break
+    
+    # Try contains matches
+    if not products and query_numeric and len(query_numeric) >= 6:
+        products = Product.objects.filter(barcode__icontains=query_numeric).first()
+        if products:
+            matched_by = f"contains match with '{query_numeric}'"
     
     if products:
-        print(f"DEBUG: Found product by exact match: {products.name} - {products.barcode}")
-        product_name = products.name
-        if products.size:
-            product_name += f" ({products.size})"
-        if products.colour:
-            product_name += f" - {products.colour}"
-        
-        data = {
-            'id': str(products.id),
-            'name': product_name,
-            'barcode': products.barcode,
-            'price': float(products.selling_price),
-            'quantity': products.quantity,
-        }
-        return JsonResponse({'product': data})
-    
-    # Try partial match (contains)
-    print(f"DEBUG: Trying partial match for: '{query_clean}'")
-    products = Product.objects.filter(barcode__icontains=query_clean).first()
-    
-    if products:
-        print(f"DEBUG: Found product by partial match: {products.name} - {products.barcode}")
-        product_name = products.name
+        print(f"DEBUG: Found product: {products.name} - Barcode: [{products.barcode}] - Matched by: {matched_by}")
+        brand = products.brand or "ROOPAAN'S"
+        product_name = f"{brand} - {products.name}"
         if products.size:
             product_name += f" ({products.size})"
         if products.colour:
@@ -155,7 +164,8 @@ def search_product(request):
     
     data = []
     for p in products_list:
-        product_name = p.name
+        brand = p.brand or "ROOPAAN'S"
+        product_name = f"{brand} - {p.name}"
         if p.size:
             product_name += f" ({p.size})"
         if p.colour:
@@ -170,10 +180,10 @@ def search_product(request):
         })
     
     if not data:
-        print(f"DEBUG: No products found for query: '{query_clean}'")
+        print(f"DEBUG: No products found for any query variant")
         # List all barcodes in system for debugging
         all_barcodes = Product.objects.values_list('barcode', flat=True)[:10]
-        print(f"DEBUG: Available barcodes in system: {list(all_barcodes)}")
+        print(f"DEBUG: Sample barcodes in system: {list(all_barcodes)}")
     
     return JsonResponse({'products': data})
 

@@ -21,8 +21,9 @@ def generate_product_barcode(product):
     import random
     import hashlib
     
-    # Create a seed from product attributes
-    seed_string = f"{product.name}{product.size or ''}{product.colour or ''}"
+    # Create a seed from product attributes including brand
+    brand = product.brand or "ROOPAAN'S"
+    seed_string = f"{product.name}{brand}{product.size or ''}{product.colour or ''}"
     
     # Generate a hash and convert to numeric
     hash_object = hashlib.md5(seed_string.encode())
@@ -198,52 +199,133 @@ def delete_product(request, product_id):
 def generate_barcode(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
-    # Generate barcode
-    EAN = barcode.get_barcode_class('code128')
-    ean = EAN(product.barcode, writer=ImageWriter())
+    # Clean the barcode value to ensure consistency - remove any whitespace
+    barcode_value = str(product.barcode).strip().replace(' ', '').replace('\t', '').replace('\n', '')
     
-    # Write barcode to buffer
+    print(f"BARCODE GENERATION - Product: {product.name}, Barcode Value: [{barcode_value}] (len={len(barcode_value)}), ASCII: {[ord(c) for c in barcode_value]}")
+    
+    # Always use Code128 - it encodes the EXACT value without modification
+    # EAN8/EAN13 recalculate checksums which causes scanner to read different values
+    barcode_class = barcode.get_barcode_class('code128')
+    print(f"Using Code128 for exact barcode encoding (no checksum modification)")
+    
+    # Configure the writer to show the exact barcode value
+    writer_options = {
+        'module_width': 0.3,
+        'module_height': 15.0,
+        'quiet_zone': 6.5,
+        'font_size': 12,
+        'text_distance': 5.0,
+        'write_text': True,
+    }
+    
+    ean = barcode_class(barcode_value, writer=ImageWriter())
+    
+    # Write barcode to buffer with options
     buffer = BytesIO()
-    ean.write(buffer)
+    ean.write(buffer, options=writer_options)
     
     # Open the barcode image
     buffer.seek(0)
     barcode_image = Image.open(buffer)
     
-    # Create a new image with extra space for MRP text
-    new_height = barcode_image.height + 60  # Add 60 pixels for MRP text
+    # Create a new image with extra space for store header and product info
+    header_space = 50  # Space for "ROOPAN STORE" at top
+    footer_space = 140  # Space for product details below barcode
+    new_height = barcode_image.height + header_space + footer_space
     new_image = Image.new('RGB', (barcode_image.width, new_height), 'white')
     
-    # Paste the barcode on top
-    new_image.paste(barcode_image, (0, 0))
-    
-    # Add MRP text below barcode
+    # Add product details
     draw = ImageDraw.Draw(new_image)
     
     # Try to use a nice font, fallback to default if not available
     try:
-        font = ImageFont.truetype("arial.ttf", 24)
+        font_header = ImageFont.truetype("arialbd.ttf", 28)  # Bold for header
+        font_large = ImageFont.truetype("arial.ttf", 20)
+        font_small = ImageFont.truetype("arial.ttf", 16)
     except:
-        font = ImageFont.load_default()
+        try:
+            font_header = ImageFont.truetype("arial.ttf", 28)
+            font_large = ImageFont.truetype("arial.ttf", 20)
+            font_small = ImageFont.truetype("arial.ttf", 16)
+        except:
+            font_header = ImageFont.load_default()
+            font_large = ImageFont.load_default()
+            font_small = ImageFont.load_default()
     
-    # Prepare MRP text
-    mrp_text = f"MRP: ₹{product.selling_price}"
-    
-    # Get text bounding box for centering
-    bbox = draw.textbbox((0, 0), mrp_text, font=font)
+    # Add "ROOPAN STORE" header at the top
+    store_text = "ROOPAN STORE"
+    bbox = draw.textbbox((0, 0), store_text, font=font_header)
     text_width = bbox[2] - bbox[0]
     text_x = (barcode_image.width - text_width) // 2
-    text_y = barcode_image.height + 15
+    draw.text((text_x, 10), store_text, fill='black', font=font_header)
     
-    # Draw the MRP text
-    draw.text((text_x, text_y), mrp_text, fill='black', font=font)
+    # Paste the barcode below the header
+    new_image.paste(barcode_image, (0, header_space))
+    
+    # Starting Y position for text below barcode
+    current_y = header_space + barcode_image.height + 10
+    
+    # Brand name
+    brand_text = product.brand or "ROOPAAN'S"
+    bbox = draw.textbbox((0, 0), brand_text, font=font_large)
+    text_width = bbox[2] - bbox[0]
+    text_x = (barcode_image.width - text_width) // 2
+    draw.text((text_x, current_y), brand_text, fill='black', font=font_large)
+    current_y += 25
+    
+    # Product name
+    name_text = product.name
+    bbox = draw.textbbox((0, 0), name_text, font=font_large)
+    text_width = bbox[2] - bbox[0]
+    text_x = (barcode_image.width - text_width) // 2
+    draw.text((text_x, current_y), name_text, fill='black', font=font_large)
+    current_y += 25
+    
+    # Size and Colour on same line if both exist
+    size_colour_parts = []
+    if product.size:
+        size_colour_parts.append(f"Size: {product.size}")
+    if product.colour:
+        size_colour_parts.append(f"Colour: {product.colour}")
+    
+    if size_colour_parts:
+        size_colour_text = " | ".join(size_colour_parts)
+        bbox = draw.textbbox((0, 0), size_colour_text, font=font_small)
+        text_width = bbox[2] - bbox[0]
+        text_x = (barcode_image.width - text_width) // 2
+        draw.text((text_x, current_y), size_colour_text, fill='black', font=font_small)
+        current_y += 22
+    
+    # MRP text
+    mrp_text = f"MRP: ₹{product.selling_price}"
+    bbox = draw.textbbox((0, 0), mrp_text, font=font_large)
+    text_width = bbox[2] - bbox[0]
+    text_x = (barcode_image.width - text_width) // 2
+    draw.text((text_x, current_y), mrp_text, fill='black', font=font_large)
     
     # Save the combined image to buffer
     final_buffer = BytesIO()
     new_image.save(final_buffer, format='PNG')
     
+    # Create a descriptive filename
+    brand = product.brand or "ROOPAN'S"
+    filename_parts = [brand, product.name]
+    if product.size:
+        filename_parts.append(product.size)
+    if product.colour:
+        filename_parts.append(product.colour)
+    filename_parts.append(barcode_value)
+    if product.colour:
+        filename_parts.append(product.colour)
+    filename_parts.append(barcode_value)
+    
+    # Clean filename for OS compatibility
+    filename = "_".join(filename_parts).replace(" ", "_").replace("/", "-")
+    filename = f"{filename}.png"
+    
     response = HttpResponse(final_buffer.getvalue(), content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename="{product.barcode}.png"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
 
