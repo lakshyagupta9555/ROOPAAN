@@ -230,7 +230,7 @@ def generate_barcode(request, product_id):
     barcode_image = Image.open(buffer)
     
     # Create a new image with extra space for store header and product info
-    header_space = 50  # Space for "ROOPAN STORE" at top
+    header_space = 50  # Space for "ROOPAAN STORE" at top
     footer_space = 140  # Space for product details below barcode
     new_height = barcode_image.height + header_space + footer_space
     new_image = Image.new('RGB', (barcode_image.width, new_height), 'white')
@@ -253,8 +253,8 @@ def generate_barcode(request, product_id):
             font_large = ImageFont.load_default()
             font_small = ImageFont.load_default()
     
-    # Add "ROOPAN STORE" header at the top
-    store_text = "ROOPAN STORE"
+    # Add "ROOPAAN STORE" header at the top
+    store_text = "ROOPAAN STORE"
     bbox = draw.textbbox((0, 0), store_text, font=font_header)
     text_width = bbox[2] - bbox[0]
     text_x = (barcode_image.width - text_width) // 2
