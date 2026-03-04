@@ -5,6 +5,27 @@ from decimal import Decimal
 import uuid
 
 
+class Customer(models.Model):
+    """Track customers for loyalty discounts"""
+    phone = models.CharField(max_length=15, unique=True, db_index=True)
+    name = models.CharField(max_length=255)
+    first_visit = models.DateTimeField(auto_now_add=True)
+    last_visit = models.DateTimeField(auto_now=True)
+    total_visits = models.IntegerField(default=1)
+    total_spent = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    
+    class Meta:
+        ordering = ['-last_visit']
+    
+    def __str__(self):
+        return f"{self.name} ({self.phone}) - {self.total_visits} visits"
+
+
 class Sale(models.Model):
     PAYMENT_METHOD_CHOICES = [
         ('cash', 'Cash'),
@@ -15,6 +36,9 @@ class Sale(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     invoice_number = models.CharField(max_length=50, unique=True)
     seller = models.ForeignKey(Seller, on_delete=models.PROTECT, related_name='sales')
+    customer = models.ForeignKey('Customer', on_delete=models.SET_NULL, null=True, blank=True, related_name='purchases')
+    customer_name = models.CharField(max_length=255, blank=True, null=True)
+    customer_phone = models.CharField(max_length=15, blank=True, null=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
     subtotal = models.DecimalField(
         max_digits=10, 
@@ -24,16 +48,17 @@ class Sale(models.Model):
     tax_amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
-        default=0.00,
+        default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
     discount_amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
-        default=0.00,
+        default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True)
+    loyalty_discount_applied = models.BooleanField(default=False)
     total_amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2,

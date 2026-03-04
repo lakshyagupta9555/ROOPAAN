@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, TaxConfig, Coupon, User, Seller
+from .models import Product, TaxConfig, Coupon, User, Seller, LoyaltyDiscountConfig
 from django.contrib.auth.password_validation import validate_password
 
 
@@ -88,4 +88,37 @@ class CouponForm(forms.ModelForm):
             'valid_from': forms.DateTimeInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'type': 'datetime-local'}),
             'valid_until': forms.DateTimeInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'type': 'datetime-local'}),
             'usage_limit': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
+        }
+
+
+class LoyaltyDiscountConfigForm(forms.ModelForm):
+    class Meta:
+        model = LoyaltyDiscountConfig
+        fields = ['is_active', 'discount_type', 'discount_value', 'min_days_between_visits', 
+                  'max_days_between_visits', 'min_purchase_amount', 'max_discount_amount']
+        widgets = {
+            'is_active': forms.CheckboxInput(attrs={'class': 'w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500'}),
+            'discount_type': forms.Select(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
+            'discount_value': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'step': '0.01'}),
+            'min_days_between_visits': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
+            'max_days_between_visits': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white'}),
+            'min_purchase_amount': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'step': '0.01'}),
+            'max_discount_amount': forms.NumberInput(attrs={'class': 'w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white', 'step': '0.01'}),
+        }
+        labels = {
+            'is_active': 'Enable Loyalty Discount',
+            'discount_type': 'Discount Type',
+            'discount_value': 'Discount Value',
+            'min_days_between_visits': 'Minimum Days Between Visits',
+            'max_days_between_visits': 'Maximum Days Between Visits',
+            'min_purchase_amount': 'Minimum Purchase Amount (₹)',
+            'max_discount_amount': 'Maximum Discount Amount (₹)',
+        }
+        help_texts = {
+            'is_active': 'Check to enable loyalty discounts for returning customers',
+            'discount_value': 'Enter percentage (e.g., 5 for 5%) or fixed amount (e.g., 50 for ₹50)',
+            'min_days_between_visits': '0 means no minimum restriction',
+            'max_days_between_visits': 'Customer must visit within this many days to qualify (0 = no limit)',
+            'min_purchase_amount': 'Minimum cart value required to apply loyalty discount',
+            'max_discount_amount': 'Maximum discount cap (only for percentage type, leave blank for no cap)',
         }

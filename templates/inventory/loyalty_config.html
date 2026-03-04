@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Loyalty Discount Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <h1 class="text-2xl font-bold text-white mb-2">🎁 Loyalty Discount Configuration</h1>
+        <p class="text-gray-400 mb-6">Configure automatic discounts for returning customers based on their visit frequency</p>
+        
+        {% if config.is_active %}
+        <div class="bg-green-900/30 border border-green-600 rounded-lg p-4 mb-6">
+            <p class="text-green-400 font-medium">✓ Loyalty Discount is Active</p>
+            <p class="text-green-300 text-sm mt-1">
+                Returning customers will automatically receive 
+                <span class="font-bold">{{ config.discount_value }}{% if config.discount_type == 'percentage' %}%{% else %}₹{% endif %}</span> 
+                discount when they visit within {{ config.max_days_between_visits }} days
+            </p>
+        </div>
+        {% else %}
+        <div class="bg-yellow-900/30 border border-yellow-600 rounded-lg p-4 mb-6">
+            <p class="text-yellow-400 font-medium">⚠ Loyalty Discount is Disabled</p>
+            <p class="text-yellow-300 text-sm mt-1">Enable it below to start rewarding returning customers</p>
+        </div>
+        {% endif %}
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Enable/Disable Toggle -->
+            <div class="bg-gray-700 rounded-lg p-4">
+                <label class="flex items-center cursor-pointer">
+                    {{ form.is_active }}
+                    <span class="ml-3 text-white font-medium">Enable Loyalty Discount</span>
+                </label>
+                <p class="text-xs text-gray-400 mt-2">{{ form.is_active.help_text }}</p>
+            </div>
+            
+            <!-- Discount Settings -->
+            <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-lg font-semibold text-white mb-4">Discount Settings</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.discount_type.label }} *</label>
+                        {{ form.discount_type }}
+                        <p class="text-xs text-gray-400 mt-1">Choose between percentage or fixed amount</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.discount_value.label }} *</label>
+                        {{ form.discount_value }}
+                        <p class="text-xs text-gray-400 mt-1">{{ form.discount_value.help_text }}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.max_discount_amount.label }}</label>
+                    {{ form.max_discount_amount }}
+                    <p class="text-xs text-gray-400 mt-1">{{ form.max_discount_amount.help_text }}</p>
+                </div>
+            </div>
+            
+            <!-- Time Period Settings -->
+            <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-lg font-semibold text-white mb-4">⏰ Time Period Eligibility</h3>
+                <p class="text-gray-400 text-sm mb-4">Define when customers are eligible for loyalty discount based on their last visit</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.min_days_between_visits.label }}</label>
+                        {{ form.min_days_between_visits }}
+                        <p class="text-xs text-gray-400 mt-1">{{ form.min_days_between_visits.help_text }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.max_days_between_visits.label }} *</label>
+                        {{ form.max_days_between_visits }}
+                        <p class="text-xs text-gray-400 mt-1">{{ form.max_days_between_visits.help_text }}</p>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-900/30 border border-blue-600 rounded-lg p-4 mt-4">
+                    <p class="text-blue-300 text-sm">
+                        <strong>Example:</strong> With min=0 and max=30, customers who visited within the last 30 days will get the discount
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Purchase Requirements -->
+            <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-lg font-semibold text-white mb-4">💰 Purchase Requirements</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">{{ form.min_purchase_amount.label }}</label>
+                    {{ form.min_purchase_amount }}
+                    <p class="text-xs text-gray-400 mt-1">{{ form.min_purchase_amount.help_text }}</p>
+                </div>
+            </div>
+            
+            <!-- Preview Box -->
+            <div class="bg-gray-900 border border-gray-600 rounded-lg p-4">
+                <h4 class="text-white font-medium mb-2">📋 Configuration Preview:</h4>
+                <div class="text-gray-300 text-sm space-y-1">
+                    <p>• Status: <span id="preview-status" class="font-bold">Active</span></p>
+                    <p>• Discount: <span id="preview-discount" class="font-bold text-green-400">5%</span></p>
+                    <p>• Valid for visits within: <span id="preview-days" class="font-bold">30 days</span></p>
+                    <p>• Minimum purchase: <span id="preview-min" class="font-bold">₹0</span></p>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg">
+                    💾 Save Configuration
+                </button>
+                <a href="{% url 'inventory:dashboard' %}" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updatePreview() {
+    const isActive = document.querySelector('input[name="is_active"]').checked;
+    const discountType = document.querySelector('select[name="discount_type"]').value;
+    const discountValue = parseFloat(document.querySelector('input[name="discount_value"]').value) || 0;
+    const maxDays = parseInt(document.querySelector('input[name="max_days_between_visits"]').value) || 0;
+    const minPurchase = parseFloat(document.querySelector('input[name="min_purchase_amount"]').value) || 0;
+    
+    document.getElementById('preview-status').textContent = isActive ? 'Active ✓' : 'Disabled ✗';
+    document.getElementById('preview-status').className = isActive ? 'font-bold text-green-400' : 'font-bold text-red-400';
+    
+    const discountSymbol = discountType === 'percentage' ? '%' : '₹';
+    document.getElementById('preview-discount').textContent = discountValue + discountSymbol;
+    
+    document.getElementById('preview-days').textContent = maxDays === 0 ? 'No limit' : maxDays + ' days';
+    document.getElementById('preview-min').textContent = '₹' + minPurchase.toFixed(2);
+}
+
+// Add event listeners
+document.querySelectorAll('input, select').forEach(element => {
+    element.addEventListener('change', updatePreview);
+    element.addEventListener('input', updatePreview);
+});
+
+// Initial update
+updatePreview();
+</script>
+{% endblock %}

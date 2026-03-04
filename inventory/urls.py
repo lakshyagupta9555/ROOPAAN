@@ -14,6 +14,7 @@ urlpatterns = [
     path('sellers/add/', views.add_seller, name='add_seller'),
     path('sellers/toggle/<int:seller_id>/', views.toggle_seller, name='toggle_seller'),
     path('tax-config/', views.tax_config, name='tax_config'),
+    path('loyalty-config/', views.loyalty_config, name='loyalty_config'),
     path('coupons/', views.coupon_list, name='coupon_list'),
     path('coupons/add/', views.add_coupon, name='add_coupon'),
     path('coupons/edit/<int:coupon_id>/', views.edit_coupon, name='edit_coupon'),

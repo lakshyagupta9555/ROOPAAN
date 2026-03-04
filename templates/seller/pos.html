@@ -68,6 +68,28 @@
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 sticky top-4">
                 <h2 class="text-xl font-semibold text-white mb-4">Order Summary</h2>
                 
+                <!-- Customer Information Section -->
+                <div class="mb-4 border-b border-gray-700 pb-4">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">
+                        👤 Customer Information (Optional)
+                    </label>
+                    <div class="space-y-2">
+                        <input type="text" id="customer-name" 
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white"
+                               placeholder="Customer Name">
+                        <div class="flex gap-2">
+                            <input type="tel" id="customer-phone" 
+                                   class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white"
+                                   placeholder="Phone Number"
+                                   onblur="checkCustomer()">
+                            <button onclick="checkCustomer()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" title="Check Customer">
+                                🔍
+                            </button>
+                        </div>
+                    </div>
+                    <div id="customer-message" class="mt-2 text-sm"></div>
+                </div>
+                
                 <!-- Coupon Section -->
                 <div class="mb-4">
                     <label for="coupon-code" class="block text-sm font-medium text-gray-300 mb-2">
@@ -76,7 +98,7 @@
                     <div class="flex gap-2">
                         <input type="text" id="coupon-code" 
                                class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white"
-                               placeholder="Enter coupon code">
+                               placeholder="Auto-applied or enter code">
                         <button onclick="applyCoupon()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
                             Apply
                         </button>
@@ -187,7 +209,8 @@
         </div>
         
         <div class="mt-4 text-center">
-            <p class="text-gray-400 text-sm">Make sure the barcode is well-lit and in focus</p>
+            <p class="text-gray-400 text-sm">🚀 Continuous scanning mode - Scan multiple items rapidly!</p>
+            <p class="text-gray-500 text-xs mt-1">Scanner stays active until you close the modal</p>
         </div>
     </div>
 </div>
@@ -203,9 +226,10 @@ const taxConfig = {
 };
 let appliedCoupon = null;
 let discountAmount = 0;
+let loyaltyDiscount = 0;  // Track loyalty discount separately
+let couponDiscount = 0;   // Track coupon discount separately
 let currentCheckoutData = null;
 let scanCount = 0;
-let isScanning = false;
 
 // Focus on barcode input
 document.getElementById('barcode-input').focus();
@@ -237,9 +261,8 @@ document.getElementById('barcode-input').addEventListener('input', function(e) {
 
 async function searchProduct() {
     const query = document.getElementById('barcode-input').value.trim();
-    if (!query || isScanning) return;
+    if (!query) return;
 
-    isScanning = true;
     console.log('Searching for:', query);
     
     try {
@@ -260,7 +283,7 @@ async function searchProduct() {
             document.getElementById('barcode-input').value = '';
             document.getElementById('search-results').innerHTML = '';
             
-            // Show quick success feedback (faster than before)
+            // Show quick success feedback (faster for rapid scanning)
             showQuickScanFeedback(data.product.name);
             
         } else if (data.products && data.products.length > 0) {
@@ -272,8 +295,7 @@ async function searchProduct() {
         console.error('Search error:', error);
         showScanError('Error searching for product: ' + error.message);
     } finally {
-        isScanning = false;
-        // Refocus for next scan
+        // Refocus for next scan (no delay for rapid scanning)
         document.getElementById('barcode-input').focus();
     }
 }
@@ -284,18 +306,18 @@ function showQuickScanFeedback(productName) {
     const feedbackText = document.getElementById('feedback-text');
     const input = document.getElementById('barcode-input');
     
-    // Quick flash on input
+    // Quick flash on input (very brief for rapid scanning)
     input.classList.add('border-green-500');
-    setTimeout(() => input.classList.remove('border-green-500'), 200);
+    setTimeout(() => input.classList.remove('border-green-500'), 150);
     
     // Show feedback message
-    feedbackText.textContent = `Added: ${productName.substring(0, 30)}${productName.length > 30 ? '...' : ''}`;
+    feedbackText.textContent = `✓ Added: ${productName.substring(0, 30)}${productName.length > 30 ? '...' : ''}`;
     feedback.classList.remove('hidden');
     
-    // Auto-hide after 1.5 seconds
+    // Auto-hide after 1 second (faster for rapid scanning)
     setTimeout(() => {
         feedback.classList.add('hidden');
-    }, 1500);
+    }, 1000);
 }
 
 function showScanError(message) {
@@ -479,6 +501,12 @@ function updateCart() {
     
     cartContainer.innerHTML = html;
     updateSummary();
+    
+    // Auto-check customer discount/coupon when cart changes
+    const customerPhone = document.getElementById('customer-phone').value.trim();
+    if (customerPhone && customerPhone.length >= 10) {
+        checkCustomer();
+    }
 }
 
 function updateSummary() {
@@ -493,6 +521,12 @@ function updateSummary() {
     document.getElementById('cgst').textContent = `₹${cgst.toFixed(2)}`;
     document.getElementById('sgst').textContent = `₹${sgst.toFixed(2)}`;
     document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+    
+    // Show applied coupon info in the coupon message
+    if (discountAmount > 0 && appliedCoupon) {
+        const couponMessage = document.getElementById('coupon-message');
+        couponMessage.innerHTML = `<span class="text-green-400">✓ Applied: ${appliedCoupon} (-₹${discountAmount.toFixed(2)})</span>`;
+    }
 }
 
 async function applyCoupon() {
@@ -508,13 +542,108 @@ async function applyCoupon() {
     
     if (data.valid) {
         appliedCoupon = code;
-        discountAmount = data.discount;
-        messageDiv.innerHTML = `<span class="text-green-400">✓ ${data.message}</span>`;
+        couponDiscount = data.discount;  // Set coupon discount
+        discountAmount = loyaltyDiscount + couponDiscount;  // Combine both
+        
+        // Show combined discount message
+        if (loyaltyDiscount > 0) {
+            messageDiv.innerHTML = `<span class="text-green-400">✓ Loyalty: -₹${loyaltyDiscount.toFixed(2)}</span><br><span class="text-purple-400">✓ Coupon: -₹${couponDiscount.toFixed(2)}</span><br><span class="text-blue-400">💰 Total Discount: -₹${discountAmount.toFixed(2)}</span>`;
+        } else {
+            messageDiv.innerHTML = `<span class="text-green-400">✓ ${data.message}</span>`;
+        }
         updateSummary();
     } else {
         messageDiv.innerHTML = `<span class="text-red-400">✗ ${data.message}</span>`;
-        discountAmount = 0;
+        couponDiscount = 0;
+        discountAmount = loyaltyDiscount;  // Keep loyalty discount
         updateSummary();
+    }
+}
+
+async function checkCustomer() {
+    const phone = document.getElementById('customer-phone').value.trim();
+    const customerNameInput = document.getElementById('customer-name');
+    const customerMessage = document.getElementById('customer-message');
+    const couponCodeInput = document.getElementById('coupon-code');
+    const couponMessage = document.getElementById('coupon-message');
+    
+    if (!phone || phone.length < 10) {
+        customerMessage.innerHTML = '';
+        return;
+    }
+    
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // If cart is empty, don't check
+    if (subtotal === 0) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/seller/api/check-customer/?phone=${encodeURIComponent(phone)}&subtotal=${subtotal}`);
+        const data = await response.json();
+        
+        if (data.exists) {
+            // Fill in customer name
+            if (!customerNameInput.value) {
+                customerNameInput.value = data.name;
+            }
+            
+            // Show customer status
+            let messageHtml = `<span class="text-blue-400">👤 ${data.name} - Visit #${data.total_visits + 1}</span>`;
+            
+            // Auto-apply loyalty discount if applicable
+            loyaltyDiscount = 0;  // Reset
+            couponDiscount = 0;   // Reset
+            
+            if (data.loyalty_applicable) {
+                loyaltyDiscount = data.loyalty_discount;
+                discountAmount = loyaltyDiscount;
+                messageHtml += `<br><span class="text-green-400">✓ ${data.loyalty_message}</span>`;
+            } else if (data.loyalty_message) {
+                messageHtml += `<br><span class="text-yellow-400">⚠ ${data.loyalty_message}</span>`;
+            }
+            
+            // Auto-apply best coupon (stacks with loyalty)
+            if (data.best_coupon_code && data.best_coupon_discount > 0) {
+                couponCodeInput.value = data.best_coupon_code;
+                appliedCoupon = data.best_coupon_code;
+                couponDiscount = data.best_coupon_discount;
+                discountAmount = loyaltyDiscount + couponDiscount;  // Combine both
+                messageHtml += `<br><span class="text-purple-400">🎟️ Best coupon auto-applied: ${data.best_coupon_code}</span>`;
+            }
+            
+            // Update coupon message with combined discounts
+            if (loyaltyDiscount > 0 && couponDiscount > 0) {
+                couponMessage.innerHTML = `<span class="text-green-400">✓ Loyalty: -₹${loyaltyDiscount.toFixed(2)}</span><br><span class="text-purple-400">✓ Coupon: -₹${couponDiscount.toFixed(2)}</span><br><span class="text-blue-400">💰 Total Discount: -₹${discountAmount.toFixed(2)}</span>`;
+            } else if (loyaltyDiscount > 0) {
+                couponMessage.innerHTML = `<span class="text-green-400">✓ Loyalty discount: -₹${loyaltyDiscount.toFixed(2)}</span>`;
+            } else if (couponDiscount > 0) {
+                couponMessage.innerHTML = `<span class="text-purple-400">✓ Coupon: ${data.best_coupon_code} (-₹${couponDiscount.toFixed(2)})</span>`;
+            }
+            
+            updateSummary();
+            
+            customerMessage.innerHTML = messageHtml;
+        } else {
+            // New customer - auto-apply best coupon
+            customerMessage.innerHTML = `<span class="text-green-400">✓ ${data.message}</span>`;
+            loyaltyDiscount = 0;  // No loyalty for new customers
+            couponDiscount = 0;   // Reset
+            
+            if (data.best_coupon_code && data.best_coupon_discount > 0) {
+                couponCodeInput.value = data.best_coupon_code;
+                appliedCoupon = data.best_coupon_code;
+                couponDiscount = data.best_coupon_discount;
+                discountAmount = couponDiscount;
+                couponMessage.innerHTML = `<span class="text-purple-400">✓ Coupon: ${data.best_coupon_code} (-₹${couponDiscount.toFixed(2)})</span>`;
+                customerMessage.innerHTML += `<br><span class="text-purple-400">🎟️ Best coupon auto-applied: ${data.best_coupon_code}</span>`;
+                updateSummary();
+            }
+        }
+    } catch (error) {
+        console.error('Error checking customer:', error);
+        customerMessage.innerHTML = `<span class="text-red-400">Error checking customer</span>`;
     }
 }
 
@@ -530,10 +659,15 @@ async function checkout() {
         return;
     }
 
+    const customerName = document.getElementById('customer-name').value.trim();
+    const customerPhone = document.getElementById('customer-phone').value.trim();
+
     currentCheckoutData = {
         items: cart,
         payment_method: paymentMethod.value,
-        coupon_code: appliedCoupon || ''
+        coupon_code: appliedCoupon || '',
+        customer_name: customerName,
+        customer_phone: customerPhone
     };
 
     try {
@@ -552,7 +686,11 @@ async function checkout() {
             // Show UPI QR modal
             showUpiModal(result.qr_code, result.amount);
         } else if (result.success) {
-            alert('Sale completed successfully!');
+            let message = 'Sale completed successfully!';
+            if (result.loyalty_applied) {
+                message += ' Loyalty discount applied!';
+            }
+            alert(message);
             window.location.href = `/seller/invoice/${result.sale_id}/`;
         } else {
             alert('Error: ' + result.message);
@@ -668,7 +806,7 @@ function startScanner() {
             halfSample: true
         },
         numOfWorkers: navigator.hardwareConcurrency || 4,
-        frequency: 10,
+        frequency: 20,  // Increased for faster scanning
         locate: true
     }, function(err) {
         if (err) {
@@ -679,24 +817,24 @@ function startScanner() {
             return;
         }
         console.log("Scanner initialized successfully");
-        statusEl.textContent = 'Position barcode within the frame';
+        statusEl.textContent = '✓ Ready - Position barcode within the frame (Continuous Mode)';
         Quagga.start();
         scannerActive = true;
         scannerInitialized = true;
     });
 
-    // Handle detected barcodes
+    // Handle detected barcodes with rapid scanning support
     Quagga.onDetected(function(result) {
         if (isProcessingScan) {
             return; // Ignore if already processing a scan
         }
         
         if (result && result.codeResult && result.codeResult.code) {
-            const barcode = result.codeResult.code;
+            const barcode = result.codeResult.code.trim();
             const currentTime = Date.now();
             
-            // Prevent duplicate scans within 2 seconds
-            if (barcode === lastScannedBarcode && (currentTime - lastScannedTime) < 2000) {
+            // Prevent duplicate scans within 500ms (rapid scanning enabled)
+            if (barcode === lastScannedBarcode && (currentTime - lastScannedTime) < 500) {
                 console.log('Duplicate scan ignored:', barcode);
                 return;
             }
@@ -715,22 +853,17 @@ function startScanner() {
             // Play beep sound (optional)
             playBeep();
             
-            // Stop scanner immediately
-            stopScanner();
+            // Don't stop scanner for continuous scanning
+            // Just process the barcode and add to cart
+            document.getElementById('barcode-input').value = barcode;
+            searchProduct();
             
-            // Close modal after a brief delay for visual feedback
+            // Reset processing flag quickly for next scan (200ms delay)
             setTimeout(function() {
-                closeCameraScanner();
-                
-                // Set barcode in input and search
-                document.getElementById('barcode-input').value = barcode;
-                searchProduct();
-                
-                // Reset processing flag after search completes
-                setTimeout(function() {
-                    isProcessingScan = false;
-                }, 500);
-            }, 300);
+                isProcessingScan = false;
+                statusEl.textContent = 'Ready - Scan next item...';
+                statusEl.classList.remove('text-green-400');
+            }, 200);
         }
     });
 }

@@ -22,13 +22,13 @@ class TaxConfig(models.Model):
     cgst_rate = models.DecimalField(
         max_digits=5, 
         decimal_places=2, 
-        default=9.00,
+        default=Decimal('9.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
     sgst_rate = models.DecimalField(
         max_digits=5, 
         decimal_places=2, 
-        default=9.00,
+        default=Decimal('9.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
     updated_at = models.DateTimeField(auto_now=True)
@@ -67,7 +67,7 @@ class Product(models.Model):
     import_duty = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
-        default=0.00,
+        default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
     description = models.TextField(blank=True, null=True)
@@ -127,7 +127,7 @@ class Coupon(models.Model):
     min_purchase_amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
-        default=0.00,
+        default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
     max_discount_amount = models.DecimalField(
@@ -167,6 +167,69 @@ class Coupon(models.Model):
         return True, "Valid"
     
     def calculate_discount(self, subtotal):
+        if self.discount_type == 'percentage':
+            discount = subtotal * (self.discount_value / 100)
+            if self.max_discount_amount:
+                discount = min(discount, self.max_discount_amount)
+        else:
+            discount = self.discount_value
+        
+        return min(discount, subtotal)
+
+
+class LoyaltyDiscountConfig(models.Model):
+    """Configuration for returning customer loyalty discounts"""
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    
+    is_active = models.BooleanField(default=True, help_text="Enable loyalty discount for returning customers")
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
+    discount_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('5.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Discount percentage or fixed amount for returning customers"
+    )
+    min_days_between_visits = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Minimum days between visits to qualify for discount (0 = no restriction)"
+    )
+    max_days_between_visits = models.IntegerField(
+        default=30,
+        validators=[MinValueValidator(0)],
+        help_text="Maximum days between visits to qualify for discount (0 = no restriction)"
+    )
+    min_purchase_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Minimum purchase amount to apply loyalty discount"
+    )
+    max_discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Maximum discount amount (for percentage type)"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    
+    class Meta:
+        verbose_name = "Loyalty Discount Configuration"
+        verbose_name_plural = "Loyalty Discount Configurations"
+    
+    def __str__(self):
+        return f"Loyalty: {self.discount_value}{'%' if self.discount_type == 'percentage' else '₹'} ({self.min_days_between_visits}-{self.max_days_between_visits} days)"
+    
+    def calculate_discount(self, subtotal):
+        """Calculate loyalty discount amount"""
         if self.discount_type == 'percentage':
             discount = subtotal * (self.discount_value / 100)
             if self.max_discount_amount:

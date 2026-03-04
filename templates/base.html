@@ -61,6 +61,9 @@
                         <a href="{% url 'inventory:tax_config' %}" class="border-transparent text-gray-300 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Tax Config
                         </a>
+                        <a href="{% url 'inventory:loyalty_config' %}" class="border-transparent text-gray-300 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Loyalty
+                        </a>
                         {% elif user.user_type == 'seller' %}
                         <a href="{% url 'seller:dashboard' %}" class="border-transparent text-gray-300 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Dashboard

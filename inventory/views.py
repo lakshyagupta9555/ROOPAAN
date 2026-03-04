@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
-from .models import User, Product, TaxConfig, Seller, Coupon
-from .forms import ProductForm, SellerForm, TaxConfigForm, CouponForm
+from .models import User, Product, TaxConfig, Seller, Coupon, LoyaltyDiscountConfig
+from .forms import ProductForm, SellerForm, TaxConfigForm, CouponForm, LoyaltyDiscountConfigForm
 from django.db.models import Q
 from io import BytesIO
 import barcode
@@ -406,6 +406,25 @@ def tax_config(request):
         form = TaxConfigForm(instance=config)
     
     return render(request, 'inventory/tax_config.html', {'form': form})
+
+
+@login_required
+@user_passes_test(is_inventory_manager)
+def loyalty_config(request):
+    config, created = LoyaltyDiscountConfig.objects.get_or_create(id=1)
+    
+    if request.method == 'POST':
+        form = LoyaltyDiscountConfigForm(request.POST, instance=config)
+        if form.is_valid():
+            loyalty_config = form.save(commit=False)
+            loyalty_config.updated_by = request.user
+            loyalty_config.save()
+            messages.success(request, 'Loyalty discount configuration updated successfully!')
+            return redirect('inventory:loyalty_config')
+    else:
+        form = LoyaltyDiscountConfigForm(instance=config)
+    
+    return render(request, 'inventory/loyalty_config.html', {'form': form, 'config': config})
 
 
 @login_required

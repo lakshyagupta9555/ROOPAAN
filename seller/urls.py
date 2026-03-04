@@ -8,6 +8,7 @@ urlpatterns = [
     path('pos/', views.pos_system, name='pos'),
     path('api/search-product/', views.search_product, name='search_product'),
     path('api/validate-coupon/', views.validate_coupon, name='validate_coupon'),
+    path('api/check-customer/', views.check_customer, name='check_customer'),
     path('checkout/', views.checkout, name='checkout'),
     path('invoice/<uuid:sale_id>/', views.view_invoice, name='view_invoice'),
     path('invoice/<uuid:sale_id>/print/', views.print_invoice, name='print_invoice'),

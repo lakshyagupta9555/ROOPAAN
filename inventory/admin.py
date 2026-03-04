@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Product, TaxConfig, Seller, Coupon
+from .models import User, Product, TaxConfig, Seller, Coupon, LoyaltyDiscountConfig
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -45,3 +45,25 @@ class CouponAdmin(admin.ModelAdmin):
     list_filter = ['discount_type', 'is_active', 'valid_from', 'valid_until']
     search_fields = ['code']
     readonly_fields = ['times_used', 'created_at']
+
+@admin.register(LoyaltyDiscountConfig)
+class LoyaltyDiscountConfigAdmin(admin.ModelAdmin):
+    list_display = ['is_active', 'discount_type', 'discount_value', 'min_days_between_visits', 'max_days_between_visits', 'updated_at']
+    list_filter = ['is_active', 'discount_type']
+    fieldsets = (
+        ('Discount Settings', {
+            'fields': ('is_active', 'discount_type', 'discount_value', 'max_discount_amount')
+        }),
+        ('Time Period Settings', {
+            'fields': ('min_days_between_visits', 'max_days_between_visits'),
+            'description': 'Define the time window for loyalty discount eligibility'
+        }),
+        ('Requirements', {
+            'fields': ('min_purchase_amount',)
+        }),
+        ('Metadata', {
+            'fields': ('updated_at', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ['updated_at']
